@@ -119,12 +119,23 @@ initial begin
    //memory[3] = 'h70;
 
    // JLEZ - load 255 into A (overriding the above settings) while it is <= 0 inc it
-   A = 'hFE;
-   B = 'h00;
+   //A = 'hFE;
+   //B = 'h00;
+   //C = 'h01;
+   //memory[0] = 'h02;
+   //memory[1] = 'h44;
+   //memory[2] = 'h70;
+
+   // JALR - jump back with return
+   // JALR RD, RS  save PC+1 in RS and jump to RD
+   A = 'h02;
+   B = 'h03;
    C = 'h01;
-   memory[0] = 'h02;
+   D = 0;
+   memory[0] = 'h12;
    memory[1] = 'h44;
-   memory[2] = 'h70;
+   memory[2] = 'h5E;   /5E RD=11 RS=10   1110 = E
+   memory[3] = 'h70;
 end
 
 always #1 clk=~clk;
@@ -137,7 +148,7 @@ always @(posedge clk) begin
          end
       `FETCH: 
          begin
-            if (opCode4 == 4 && doJump) begin
+            if ((opCode4 == 4 && doJump) || opCode4 == 5) begin
                $display("jumping to %h", Rrd_in);
                PC <= Rrd_in;
                instruction <= memory[Rrd_in];
@@ -157,7 +168,6 @@ always @(posedge clk) begin
          end
       `EXECUTE: 
          begin
-            results <= result_in;
             if (opCode4 == 3) begin
                memory[Rrd] <= Rrs;
                cycle <= `FETCH;
@@ -165,8 +175,13 @@ always @(posedge clk) begin
             else if (opCode4 == 4) begin
                cycle <= `FETCH;
                end
-            else
+            else if (opCode4 == 5) begin
+               results <= PC;
+               end
+            else begin
                cycle <= `WRITEBACK;
+               results <= result_in;
+               end
          end
       `WRITEBACK: 
          begin
@@ -182,6 +197,12 @@ always @(posedge clk) begin
                      1: B <= register_in;
                      2: C <= register_in;
                      3: D <= register_in;
+                  endcase
+               2: case(rs)
+                     0: A <= PC;
+                     1: B <= PC;
+                     2: C <= PC;
+                     3: D <= PC;
                   endcase
             endcase
             cycle <= `FETCH;
