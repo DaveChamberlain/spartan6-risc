@@ -119,6 +119,7 @@ initial begin
    //memory[3] = 'h70;
 
    // JLEZ - load 255 into A (overriding the above settings) while it is <= 0 inc it
+   //        it should stop when A is 1
    //A = 'hFE;
    //B = 'h00;
    //C = 'h01;
@@ -128,14 +129,15 @@ initial begin
 
    // JALR - jump back with return
    // JALR RD, RS  save PC+1 in RS and jump to RD
-   A = 'h02;
-   B = 'h03;
-   C = 'h01;
-   D = 0;
-   memory[0] = 'h12;
-   memory[1] = 'h44;
-   memory[2] = 'h5E;   /5E RD=11 RS=10   1110 = E
-   memory[3] = 'h70;
+   //A = 'h02;
+   //B = 'h03;
+   //C = 'h01;
+   //D = 0;
+   //memory[0] = 'h12;
+   //memory[1] = 'h44;
+   //memory[2] = 'h5D;   //5E RD=11 RS=01   1101 = D
+   //memory[3] = 'h70;
+   //memory[4] = 'h70;
 end
 
 always #1 clk=~clk;
@@ -149,11 +151,17 @@ always @(posedge clk) begin
       `FETCH: 
          begin
             if ((opCode4 == 4 && doJump) || opCode4 == 5) begin
-               $display("jumping to %h", Rrd_in);
-               PC <= Rrd_in;
+               $display("Setting PC to %h", Rrd_in);
                instruction <= memory[Rrd_in];
                end
+            if (opCode4 == 4 && doJump) begin
+               PC <= Rrd_in;
+               end
+            else if (opCode4 == 5) begin
+               PC <= Rrd_in + 1;
+               end
             else begin
+               $display("bumping PC to %h", PC_in);
                PC <= PC_in;
                instruction <= instruction_in;
                end
@@ -176,7 +184,8 @@ always @(posedge clk) begin
                cycle <= `FETCH;
                end
             else if (opCode4 == 5) begin
-               results <= PC;
+               results <= Rrd_in;
+               cycle <= `WRITEBACK;
                end
             else begin
                cycle <= `WRITEBACK;
@@ -199,10 +208,10 @@ always @(posedge clk) begin
                      3: D <= register_in;
                   endcase
                2: case(rs)
-                     0: A <= PC;
-                     1: B <= PC;
-                     2: C <= PC;
-                     3: D <= PC;
+                     0: A <= PC_in;
+                     1: B <= PC_in;
+                     2: C <= PC_in;
+                     3: D <= PC_in;
                   endcase
             endcase
             cycle <= `FETCH;
