@@ -32,6 +32,7 @@ assign rt=instruction[5:4];
 
 wire[3:0] immediate = instruction[3:0];
 
+wire[0:0] doJump = ((Rrs <= 0) || ((Rrs & 'h80) != 0)) ? 1 : 0;
 
 wire[1:0] opCode2;
 assign opCode2=instruction[7:6];
@@ -54,6 +55,7 @@ assign Rrt_in = rt==0 ? A : rt==1 ? B : rt==2 ? C : D;
 
 wire[7:0] Rrd_in;
 assign Rrd_in = rd==0 ? A : rd==1 ? B : rd==2 ? C : D;
+
 
 wire[7:0] Rrs_in;
 assign Rrs_in = rs==0 ? A : rs==1 ? B : rs==2 ? C : D;
@@ -116,6 +118,13 @@ initial begin
    //memory[2] = 'h2E;
    //memory[3] = 'h70;
 
+   // JLEZ - load 255 into A (overriding the above settings) while it is <= 0 inc it
+   A = 'hFE;
+   B = 'h00;
+   C = 'h01;
+   memory[0] = 'h02;
+   memory[1] = 'h44;
+   memory[2] = 'h70;
 end
 
 always #1 clk=~clk;
@@ -128,8 +137,15 @@ always @(posedge clk) begin
          end
       `FETCH: 
          begin
-            PC <= PC_in;
-            instruction <= instruction_in;
+            if (opCode4 == 4 && doJump) begin
+               $display("jumping to %h", Rrd_in);
+               PC <= Rrd_in;
+               instruction <= memory[Rrd_in];
+               end
+            else begin
+               PC <= PC_in;
+               instruction <= instruction_in;
+               end
             cycle <= `DECODE;
          end
       `DECODE: 
@@ -144,6 +160,9 @@ always @(posedge clk) begin
             results <= result_in;
             if (opCode4 == 3) begin
                memory[Rrd] <= Rrs;
+               cycle <= `FETCH;
+               end
+            else if (opCode4 == 4) begin
                cycle <= `FETCH;
                end
             else
@@ -169,8 +188,8 @@ always @(posedge clk) begin
          end
    endcase
 
-   $display("A=%h B=%h C=%h D=%h cycle=%h PC=%h instruction=%h, immediate=%h, memory[255]=%h, Rrs_in=%h" ,
-       A, B, C, D, cycle, PC, instruction, immediate, memory[255], Rrs_in);
+   $display("A=%h B=%h C=%h D=%h cycle=%h PC=%h instruction=%h, immediate=%h, memory[255]=%h, Rrs_in=%h, Rrd_in=%h, doJump=%h" ,
+       A, B, C, D, cycle, PC, instruction, immediate, memory[255], Rrs_in, Rrd_in, doJump);
 
    if (instruction == 'h70) $finish;
 end
