@@ -7,9 +7,15 @@ help:
 	@echo "compile:    Compile the emulator"
 	@echo "run:        Run the emulator - will compile first if necessary"
 
-run: compile
+run: install compile
 	@echo Running:
 	@vvp em.vvp
+
+install: /usr/local/bin/iverilog
+
+/usr/local/bin/iverilog:
+	@echo Installing iverilog
+	@brew install icarus-verilog
 
 compile: em.vvp
 
