@@ -87,9 +87,9 @@ assign result_in = resultsMux == 0 ? ALU :
 initial begin
    PC=0;
 
-   A = 3;
-   B = 4;
-   C = 5;
+   A = 2;
+   B = 2;
+   C = 2;
    D = 6;
 
    // ADD  A=A+B
@@ -101,15 +101,16 @@ initial begin
    //memory[1] = 'h70;
 
    // LUI and LLI  C=FF
-   //memory[0] = 'hEF;
-   //memory[1] = 'hAF;
-   //memory[2] = 'h70;
+   // A=0; B=0; C=0; D=0;
+   // memory[0] = 'hBF;
+   // memory[1] = 'h7F;
+   // memory[2] = 'h70;
    
-   // STORE memory[255] = D (which is a 6 from above)
-   //memory[0] = 'hEF;
-   //memory[1] = 'hAF;
-   //memory[2] = 'h3B;
-   //memory[3] = 'h70;
+   // STORE memory[255] = D (which is a 6)  (store RD RS - from RD into RS)
+   // So putting a 6 in D means we'll be storing FROM 11xx into C (10)
+   // A=2; B=6; C=0; D='hff;
+   // memory[0] = 'h37;  // 0011 0111   RD=01  RS=11
+   // memory[1] = 'h70;
 
    // LOAD D=memory[255] (we'll load 255 with hex DC, which should wind up in D)
    //memory['hFF] = 'hDC;
@@ -133,11 +134,29 @@ initial begin
    //B = 'h03;
    //C = 'h01;
    //D = 0;
-   //memory[0] = 'h12;
-   //memory[1] = 'h44;
-   //memory[2] = 'h5D;   //5E RD=11 RS=01   1101 = D
-   //memory[3] = 'h70;
-   //memory[4] = 'h70;
+   //memory[0] = 'h5f;
+   //memory[1] = 'h74;
+   //memory[6] = 'h70;
+/*
+A=0; B=0; C=0; D=0;
+		memory[0]=8'hbf;  memory[1]=8'hfe; memory[2]=8'h23; memory[3]=8'h15; memory[4]=8'ha0; memory[5]=8'he3; memory[6]=8'hb1; memory[7]=8'hf0; memory[8]=8'h4e; 
+		memory[9]=8'h04; memory[10]=8'hb0; memory[11]=8'hf1; memory[12]=8'h1b; memory[13]=8'hb0; memory[14]=8'hf6; memory[15]=8'h5f; 
+		memory[16]=8'hbf; memory[17]=8'hff; memory[18]=8'h37; memory[19]=8'h70;
+
+		memory[254]=2;	//memory[FE] is 2
+		memory[255]=0;	//memory[FF] is 0
+*/
+
+        A=0; B=0; C=0; D=0;
+        memory[00]='hbf; memory[01]='hf0; memory[02]='h90; memory[03]='hd0; memory[04]='h37; memory[05]='hff; memory[06]='h37;
+        memory[07]='hf1; memory[08]='hd1; memory[09]='h37; memory[10]='hf0; memory[11]='h23; memory[12]='hf1; memory[13]='h27;
+        memory[14]='h2b; memory[15]='h08; memory[16]='hff; memory[17]='h3b; memory[18]='hf0; memory[19]='h37; memory[20]='h23;
+        memory[21]='hff; memory[22]='h27; memory[23]='hf1; memory[24]='h37; memory[25]='ha0; memory[26]='he1; memory[27]='hfe;
+        memory[28]='h27; memory[29]='h16; memory[30]='h37; memory[31]='h16; memory[32]='ha2; memory[33]='he6; memory[34]='h49;
+        memory[35]='hea; memory[36]='ha0; memory[37]='h5a; memory[38]='h70;
+
+        memory[254]=6;
+
 end
 
 always #1 clk=~clk;
@@ -151,21 +170,17 @@ always @(posedge clk) begin
       `FETCH: 
          begin
             if ((opCode4 == 4 && doJump) || opCode4 == 5) begin
-               $display("Setting PC to %h", Rrd_in);
-               instruction <= memory[Rrd_in];
                end
             if (opCode4 == 4 && doJump) begin
                PC <= Rrd_in;
-               end
-            else if (opCode4 == 5) begin
-               PC <= Rrd_in + 1;
+               instruction <= memory[Rrd_in];
+               cycle <= `DECODE;
                end
             else begin
-               $display("bumping PC to %h", PC_in);
                PC <= PC_in;
                instruction <= instruction_in;
+               cycle <= `DECODE;
                end
-            cycle <= `DECODE;
          end
       `DECODE: 
          begin
@@ -177,7 +192,7 @@ always @(posedge clk) begin
       `EXECUTE: 
          begin
             if (opCode4 == 3) begin
-               memory[Rrd] <= Rrs;
+               memory[Rrs] <= Rrd;
                cycle <= `FETCH;
                end
             else if (opCode4 == 4) begin
@@ -207,21 +222,28 @@ always @(posedge clk) begin
                      2: C <= register_in;
                      3: D <= register_in;
                   endcase
-               2: case(rs)
+               2: begin
+                  case(rs)
                      0: A <= PC_in;
                      1: B <= PC_in;
                      2: C <= PC_in;
                      3: D <= PC_in;
                   endcase
+                  PC <= Rrd_in;
+                  end
             endcase
             cycle <= `FETCH;
          end
    endcase
 
-   $display("A=%h B=%h C=%h D=%h cycle=%h PC=%h instruction=%h, immediate=%h, memory[255]=%h, Rrs_in=%h, Rrd_in=%h, doJump=%h" ,
-       A, B, C, D, cycle, PC, instruction, immediate, memory[255], Rrs_in, Rrd_in, doJump);
+   //if (cycle == 1)
+   //    $display("A=%h B=%h C=%h D=%h cycle=%h PC=%h instruction=%h, immediate=%h, memory[254/5]=%h/%h, Rrs_in=%h, Rrd_in=%h, doJump=%h" ,
+   //    A, B, C, D, cycle, PC, memory[PC], immediate, memory[254], memory['hFF], Rrs_in, Rrd_in, doJump);
 
-   if (instruction == 'h70) $finish;
+   if (instruction == 'h70) begin
+      $display("**** Memory[255] = %h", memory[255]);
+      $finish;
+      end
 end
 
 endmodule
