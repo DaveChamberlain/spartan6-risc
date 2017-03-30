@@ -7,3 +7,6 @@
 * emulator.v - The emulator code for straight verilog
 * fib_code.txt - The fib code for the simulator
 * mymodule.v - The module to use for xilinx (might be the same as the emulator.v)
+
+## Status
+It is currently working on a Spartan6 board.
