@@ -297,7 +297,7 @@ always @(posedge CLK_12MHz) begin
 
    if (instruction == 'h70) begin
 	   cycle <= `PAUSE;
-		memory[255] = memory[255] ^ 'h80;
+		memory[255] <= memory[255] ^ 'h80;
 		end
 	end
 end
