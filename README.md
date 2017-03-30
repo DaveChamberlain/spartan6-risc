@@ -9,4 +9,4 @@
 * mymodule.v - The module to use for xilinx (might be the same as the emulator.v)
 
 ## Status
- It is currently working on a Spartan6 board.
+It is currently working on a Spartan6 board.
