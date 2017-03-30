@@ -288,14 +288,17 @@ always @(posedge CLK_12MHz) begin
          end
 		`PAUSE:
 		   begin
-			   memory[255] <= memory[255] ^ 'h80;
+			   //memory[255] <= memory[255] ^ 'h80;
 		   end
    endcase
 
    //$display("A=%h B=%h C=%h D=%h cycle=%h PC=%h instruction=%h",
    //    A, B, C, D, cycle, PC, instruction);
 
-   if (instruction == 'h70) cycle <= `PAUSE;
+   if (instruction == 'h70) begin
+	   cycle <= `PAUSE;
+		memory[255] = memory[255] ^ 'h80;
+		end
 	end
 end
 
