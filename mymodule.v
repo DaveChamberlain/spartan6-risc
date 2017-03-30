@@ -211,7 +211,7 @@ always @(posedge CLK_12MHz) begin
 		    cycle <= `START;
 			 end
 	*/	
-		if (ctr == 0 & !lock) begin
+		//if (ctr == 0 & !lock) begin
 		case(cycle)
       `START: 
          begin
@@ -288,7 +288,7 @@ always @(posedge CLK_12MHz) begin
          end
 		`PAUSE:
 		   begin
-			   //memory[255] <= memory[255] ^ 'h80;
+			   //memory[255] <= 255; 
 		   end
    endcase
 
@@ -297,9 +297,8 @@ always @(posedge CLK_12MHz) begin
 
    if (instruction == 'h70) begin
 	   cycle <= `PAUSE;
-		memory[255] <= memory[255] ^ 'h80;
 		end
-	end
+	//end
 end
 
 endmodule
