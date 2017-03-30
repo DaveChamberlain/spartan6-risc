@@ -118,7 +118,7 @@ assign PC_in = PC+1;
 wire[7:0] register_in;
 assign register_in = results;
 
-reg [20:0] ctr;
+reg [10:0] ctr;
 reg [0:0] lock;
 
 wire[7:0] ALU = opCode4==0 ? Rrd + Rrs : opCode4==1 ? Rrd - Rrs : 0;
@@ -167,7 +167,7 @@ end
 always @(posedge CLK_12MHz) begin
 	   ctr = ctr + 1;
 		
-		if (!Switch[0] & !lock) begin
+/*		if (!Switch[0] & !lock) begin
 		    lock <= 0;
 		    cycle <= `FETCH;
 			 end
@@ -205,12 +205,12 @@ always @(posedge CLK_12MHz) begin
 			 C <= 0;
 			 D <= 0;
 			 
-			 memory[255] = 0;
-			 memory[254] = 6;
+			 memory[255] <= 0;
+			 memory[254] <= 6;
 			 
 		    cycle <= `START;
 			 end
-		
+	*/	
 		if (ctr == 0 & !lock) begin
 		case(cycle)
       `START: 
@@ -288,7 +288,7 @@ always @(posedge CLK_12MHz) begin
          end
 		`PAUSE:
 		   begin
-			   LED[7] = !LED[7]
+			   memory[255] <= memory[255] ^ 'h80;
 		   end
    endcase
 
